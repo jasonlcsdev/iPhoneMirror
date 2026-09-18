@@ -39,7 +39,7 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
     private func setupUI() {
         guard let contentView = window?.contentView else { return }
 
-        let titleLabel = NSTextField(labelWithString: "Appuie sur une touche, puis choisis l'action")
+        let titleLabel = NSTextField(labelWithString: "Press a key, then choose an action")
         titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         titleLabel.textColor = .secondaryLabelColor
         titleLabel.frame = NSRect(x: 20, y: 365, width: 480, height: 20)
@@ -61,7 +61,7 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
         tableView.rowHeight = 32
 
         let keyCol = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("key"))
-        keyCol.title = "Touche"
+        keyCol.title = "Key"
         keyCol.width = 80
         tableView.addTableColumn(keyCol)
 
@@ -71,22 +71,22 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
         tableView.addTableColumn(actionCol)
 
         let coordsCol = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("coords"))
-        coordsCol.title = "Coordonnées"
+        coordsCol.title = "Coordinates"
         coordsCol.width = 120
         tableView.addTableColumn(coordsCol)
 
         scrollView.documentView = tableView
         contentView.addSubview(scrollView)
 
-        addButton = NSButton(title: "+ Touche", target: self, action: #selector(addBinding))
+        addButton = NSButton(title: "+ Key", target: self, action: #selector(addBinding))
         addButton.frame = NSRect(x: 20, y: 20, width: 100, height: 28)
         contentView.addSubview(addButton)
 
-        deleteButton = NSButton(title: "Supprimer", target: self, action: #selector(deleteBinding))
+        deleteButton = NSButton(title: "Delete", target: self, action: #selector(deleteBinding))
         deleteButton.frame = NSRect(x: 130, y: 20, width: 100, height: 28)
         contentView.addSubview(deleteButton)
 
-        saveButton = NSButton(title: "Enregistrer", target: self, action: #selector(saveBindings))
+        saveButton = NSButton(title: "Save", target: self, action: #selector(saveBindings))
         saveButton.frame = NSRect(x: 400, y: 20, width: 100, height: 28)
         saveButton.keyEquivalent = "\r"
         contentView.addSubview(saveButton)
@@ -141,7 +141,7 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
 
     @objc private func addBinding() {
         recordingKey = true
-        addButton.title = "Appuie..."
+        addButton.title = "Press..."
         statusLabel.stringValue = ""
     }
 
@@ -174,7 +174,7 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
     override func keyDown(with event: NSEvent) {
         if recordingKey {
             recordingKey = false
-            addButton.title = "+ Touche"
+            addButton.title = "+ Key"
             pendingKeyCode = event.keyCode
             pendingKeyName = Self.keyCodeToString(event.keyCode)
             showActionPicker()
@@ -188,12 +188,12 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
 
     private func showActionPicker() {
         let alert = NSAlert()
-        alert.messageText = "Touche: \(pendingKeyName)"
-        alert.informativeText = "Choisis l'action pour cette touche"
-        alert.addButton(withTitle: "Tap (cliquer sur l'écran)")
+        alert.messageText = "Key: \(pendingKeyName)"
+        alert.informativeText = "Choose an action for this key"
+        alert.addButton(withTitle: "Tap (click on screen)")
         alert.addButton(withTitle: "Swipe")
         alert.addButton(withTitle: "Home")
-        alert.addButton(withTitle: "Annuler")
+        alert.addButton(withTitle: "Cancel")
 
         let result = alert.runModal()
 
@@ -211,7 +211,7 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
 
     private func startPickingCoords() {
         pickingCoords = true
-        statusLabel.stringValue = "→ Clique sur l'écran mirror pour placer le tap"
+        statusLabel.stringValue = "→ Click on the mirror screen to place the tap"
 
         window?.orderOut(nil)
 
@@ -240,11 +240,11 @@ class KeyBindingsWindowController: NSWindowController, NSTableViewDataSource, NS
     private func showSwipePicker() {
         let alert = NSAlert()
         alert.messageText = "Swipe - Direction"
-        alert.addButton(withTitle: "Haut")
-        alert.addButton(withTitle: "Bas")
-        alert.addButton(withTitle: "Gauche")
-        alert.addButton(withTitle: "Droite")
-        alert.addButton(withTitle: "Annuler")
+        alert.addButton(withTitle: "Up")
+        alert.addButton(withTitle: "Down")
+        alert.addButton(withTitle: "Left")
+        alert.addButton(withTitle: "Right")
+        alert.addButton(withTitle: "Cancel")
 
         let result = alert.runModal()
         let dir: String
