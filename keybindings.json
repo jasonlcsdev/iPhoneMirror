@@ -1,3 +1,5 @@
 {
-  "bindings": {}
+  "bindings" : {
+    "n" : "tap:0.734,0.420"
+  }
 }
