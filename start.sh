@@ -72,14 +72,18 @@ fi
 
 # 3. App
 echo "[3/3] Launching iPhoneMirror..."
-APP_PATH="$(cd "$(dirname "$0")" && pwd)/build/Build/Products/Release/iPhoneMirror.app"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_PATH="$SCRIPT_DIR/build/Build/Products/Release/iPhoneMirror.app"
+if [ ! -d "$APP_PATH" ]; then
+    echo "  Building..."
+    xcodebuild -project "$SCRIPT_DIR/iPhoneMirror.xcodeproj" \
+        -scheme iPhoneMirror -configuration Release \
+        -derivedDataPath "$SCRIPT_DIR/build" build 2>&1 | tail -3
+fi
 if [ -d "$APP_PATH" ]; then
     open "$APP_PATH"
 else
-    echo "  App not found. Building..."
-    xcodebuild -project "$(dirname "$0")/iPhoneMirror.xcodeproj" \
-        -scheme iPhoneMirror -configuration Release build 2>&1 | tail -3
-    open "$APP_PATH" 2>/dev/null || echo "  Build failed"
+    echo "  Build failed"
 fi
 
 echo ""
