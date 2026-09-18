@@ -1,0 +1,29 @@
+# Build
+build/
+DerivedData/
+*.o
+*.d
+*.dia
+
+# Xcode
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Logs
+*.log
+/tmp/
+
+# WDA (separate repo)
+WebDriverAgent/
+
+# User-specific keybindings (keep template)
+# keybindings.json is tracked with empty defaults
