@@ -73,6 +73,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // File menu
         let fileMenu = NSMenu(title: "File")
         fileMenu.addItem(withTitle: "Key Bindings...", action: #selector(showKeyBindings), keyEquivalent: "k")
+        fileMenu.addItem(NSMenuItem.separator())
+        fileMenu.addItem(withTitle: "Toggle WiFi Mode", action: #selector(toggleWiFiMode), keyEquivalent: "w")
         let fileMenuItem = NSMenuItem()
         fileMenuItem.submenu = fileMenu
         mainMenu.addItem(fileMenuItem)
@@ -98,6 +100,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showPreferences() {
         showKeyBindings()
+    }
+
+    @objc private func toggleWiFiMode() {
+        previewView.toggleWiFiMode()
     }
 
     private func handleRotation(_ notification: Notification) {
