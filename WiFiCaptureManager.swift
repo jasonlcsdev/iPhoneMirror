@@ -23,24 +23,31 @@ class WiFiCaptureManager: NSObject, SCStreamDelegate {
             guard let self = self else { return }
 
             if let error = error {
-                print("[WiFi] Failed to get shareable content: \(error.localizedDescription)")
+                print("[WiFi] Failed to get shareable content: \(error)")
                 self.delegate?.wifiCaptureDidError(error.localizedDescription)
                 return
             }
 
             guard let content = content else {
-                print("[WiFi] No shareable content")
                 self.delegate?.wifiCaptureDidError("No screens available")
                 return
             }
 
             guard let display = content.displays.first else {
-                print("[WiFi] No display found")
                 self.delegate?.wifiCaptureDidError("No display found")
                 return
             }
 
-            let filter = SCContentFilter(display: display, excludingApplications: [], exceptingWindows: [])
+            self.logWindows(content.windows)
+
+            let filter: SCContentFilter
+            if let airplayWindow = self.findAirPlayWindow(content.windows) {
+                print("[WiFi] Capturing AirPlay window: \(airplayWindow.title ?? "?") frame=\(airplayWindow.frame)")
+                filter = SCContentFilter(display: display, excludingApplications: [], exceptingWindows: [])
+            } else {
+                print("[WiFi] No AirPlay window found, capturing full display")
+                filter = SCContentFilter(display: display, excludingApplications: [], exceptingWindows: [])
+            }
 
             let config = SCStreamConfiguration()
             config.width = Int(display.width) * 2
@@ -59,7 +66,7 @@ class WiFiCaptureManager: NSObject, SCStreamDelegate {
                 print("[WiFi] Screen capture started")
                 self.delegate?.wifiCaptureDidStart()
             } catch {
-                print("[WiFi] Failed to start capture: \(error.localizedDescription)")
+                print("[WiFi] Failed to start capture: \(error)")
                 self.delegate?.wifiCaptureDidError(error.localizedDescription)
             }
         }
@@ -73,61 +80,57 @@ class WiFiCaptureManager: NSObject, SCStreamDelegate {
         delegate?.wifiCaptureDidStop()
     }
 
-    func getWindows() -> [SCWindow] {
-        var windows: [SCWindow] = []
-        let group = DispatchGroup()
-        group.enter()
-        SCShareableContent.getWithCompletionHandler { content, _ in
-            windows = content?.windows ?? []
-            group.leave()
+    private func logWindows(_ windows: [SCWindow]) {
+        print("[WiFi] --- Available Windows ---")
+        for w in windows {
+            let title = w.title ?? "(nil)"
+            let app = w.owningApplication?.bundleIdentifier ?? "(nil)"
+            let frame = w.frame
+            let isOnScreen = w.isOnScreen
+            print("[WiFi]   title=\"\(title)\" app=\"\(app)\" frame=\(frame) onScreen=\(isOnScreen)")
         }
-        group.wait()
-        return windows
+        print("[WiFi] --- End Windows ---")
     }
 
-    func findAirPlayWindow() -> SCWindow? {
-        let windows = getWindows()
-        for window in windows {
-            let title = window.title ?? ""
-            let app = window.owningApplication?.bundleIdentifier ?? ""
-            let combined = "\(title) \(app)".lowercased()
-            if combined.contains("airplay") || combined.contains("iphone") || combined.contains("mirror") {
-                return window
+    func findAirPlayWindow(_ windows: [SCWindow]? = nil) -> SCWindow? {
+        var wins: [SCWindow] = []
+        if let provided = windows {
+            wins = provided
+        } else {
+            let group = DispatchGroup()
+            group.enter()
+            SCShareableContent.getWithCompletionHandler { content, _ in
+                wins = content?.windows ?? []
+                group.leave()
+            }
+            group.wait()
+        }
+
+        for w in wins {
+            let title = (w.title ?? "").lowercased()
+            let app = (w.owningApplication?.bundleIdentifier ?? "").lowercased()
+            let bundleName = (w.owningApplication?.applicationName ?? "").lowercased()
+            let combined = "\(title) \(app) \(bundleName)"
+
+            if combined.contains("airplay") ||
+               combined.contains("mirroring") ||
+               combined.contains("iphone") ||
+               combined.contains("apple wireless display") ||
+               (app.contains("airplay") && w.frame.width > 100) {
+                return w
+            }
+        }
+
+        for w in wins {
+            let app = (w.owningApplication?.bundleIdentifier ?? "").lowercased()
+            if app.contains("controlcenter") || app.contains("system") {
+                let title = (w.title ?? "").lowercased()
+                if title.contains("display") || title.contains("screen") {
+                    return w
+                }
             }
         }
         return nil
-    }
-
-    private func cropToAirPlayWindow(_ image: CGImage) -> CGImage? {
-        guard let window = findAirPlayWindow() else {
-            return nil
-        }
-
-        let wf = window.frame
-        let imgW = CGFloat(image.width)
-        let imgH = CGFloat(image.height)
-
-        guard wf.width > 0, wf.height > 0, imgW > 0, imgH > 0 else {
-            return nil
-        }
-
-        let scaleX = imgW / wf.width
-        let scaleY = imgH / wf.height
-
-        let cropX = wf.origin.x * scaleX
-        let cropH = wf.height * scaleY
-        let cropY = (wf.height - wf.origin.y - wf.height) * scaleY
-        let cropW = wf.width * scaleX
-
-        let cropRect = CGRect(x: cropX, y: cropY, width: cropW, height: cropH)
-
-        guard cropRect.width > 0, cropRect.height > 0,
-              cropRect.minX >= 0, cropRect.minY >= 0,
-              cropRect.maxX <= imgW, cropRect.maxY <= imgH,
-              let cropped = image.cropping(to: cropRect) else {
-            return nil
-        }
-        return cropped
     }
 }
 
@@ -139,14 +142,8 @@ extension WiFiCaptureManager: SCStreamOutput {
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
         guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return }
 
-        if let cropped = cropToAirPlayWindow(cgImage) {
-            DispatchQueue.main.async {
-                self.onFrame?(cropped)
-            }
-        } else {
-            DispatchQueue.main.async {
-                self.onFrame?(cgImage)
-            }
+        DispatchQueue.main.async {
+            self.onFrame?(cgImage)
         }
     }
 }

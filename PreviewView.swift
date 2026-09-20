@@ -96,7 +96,7 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
         captureSession?.stopRunning()
         captureSession = nil
 
-        showStatusMessage("WiFi Mode Active\n\nTo mirror iPhone:\n1. Enable AirPlay Receiver on Mac\n2. Start AirPlay from iPhone\n\nWaiting for AirPlay window...")
+        showStatusMessage("WiFi Mode Active\n\n1. Enable AirPlay Receiver: System Settings > General > AirDrop & Handoff\n2. On iPhone: Control Center > Mirroring > Select this Mac\n\nWaiting for AirPlay window...")
 
         wifiCaptureManager = WiFiCaptureManager()
         wifiCaptureManager?.delegate = self
