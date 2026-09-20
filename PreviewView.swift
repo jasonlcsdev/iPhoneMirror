@@ -6,7 +6,7 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
 
     private var captureSession: AVCaptureSession?
     private var previewLayer: AVCaptureVideoPreviewLayer!
-    private let wdaClient = WDAClient()
+    private var wdaClient = WDAClient()
     private let keyBindingManager = KeyBindingManager()
 
     private var iosScreenSize: CGSize = CGSize(width: 428, height: 926)
@@ -75,6 +75,16 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
     func reloadKeyBindings() {
         keyBindingManager.loadBindings()
         print("[iPhoneMirror] Key bindings reloaded")
+    }
+
+    // MARK: - WiFi WDA URL
+
+    var wiFiWDAURL: String {
+        return wdaClient.baseURL
+    }
+
+    func setWiFiWDAURL(_ url: String) {
+        wdaClient.setBaseURL(url)
     }
 
     // MARK: - WiFi Mode

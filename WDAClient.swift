@@ -6,7 +6,7 @@ enum SwipeDirection {
 
 class WDAClient {
 
-    private let baseURL: String
+    private(set) var baseURL: String
     private var sessionId: String?
     private let session: URLSession
     private var cachedActionsURL: URL?
@@ -24,6 +24,15 @@ class WDAClient {
         config.requestCachePolicy = .reloadIgnoringLocalCacheData
         self.session = URLSession(configuration: config)
 
+        preCreateSession()
+    }
+
+    func setBaseURL(_ url: String) {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        baseURL = trimmed
+        invalidateSession()
+        print("[WDA] Base URL set to \(baseURL)")
         preCreateSession()
     }
 

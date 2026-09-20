@@ -14,6 +14,7 @@
 		A1B2C3D400000064 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000055 /* main.swift */; };
 		A1B2C3D400000066 /* KeyBindingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000056 /* KeyBindingsWindowController.swift */; };
 		A1B2C3D400000067 /* WiFiCaptureManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000057 /* WiFiCaptureManager.swift */; };
+		A1B2C3D400000068 /* WiFiSettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000058 /* WiFiSettingsController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		A1B2C3D400000055 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		A1B2C3D400000056 /* KeyBindingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindingsWindowController.swift; sourceTree = "<group>"; };
 		A1B2C3D400000057 /* WiFiCaptureManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiCaptureManager.swift; sourceTree = "<group>"; };
+		A1B2C3D400000058 /* WiFiSettingsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WiFiSettingsController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +51,7 @@
 				A1B2C3D400000053 /* KeyBindingManager.swift */,
 				A1B2C3D400000056 /* KeyBindingsWindowController.swift */,
 				A1B2C3D400000057 /* WiFiCaptureManager.swift */,
+				A1B2C3D400000058 /* WiFiSettingsController.swift */,
 				A1B2C3D400000054 /* Info.plist */,
 				A1B2C3D400000005 /* Products */,
 			);
@@ -137,6 +140,7 @@
 				A1B2C3D400000063 /* KeyBindingManager.swift in Sources */,
 				A1B2C3D400000066 /* KeyBindingsWindowController.swift in Sources */,
 				A1B2C3D400000067 /* WiFiCaptureManager.swift in Sources */,
+				A1B2C3D400000068 /* WiFiSettingsController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
