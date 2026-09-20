@@ -11,7 +11,7 @@ echo ""
 cleanup() {
     echo ""
     echo "Shutting down..."
-    kill $IPROXY_PID $WDA_PID 2>/dev/null || true
+    kill $IPROXY_PID $WDA_PID $FORWARD_PID 2>/dev/null || true
     echo "Stopped."
     exit 0
 }
@@ -34,6 +34,23 @@ DEVICE_UDID=$(echo "$DEVICES" | head -n1 | tr -d '[:space:]')
 NAME=$(ideviceinfo -u "$DEVICE_UDID" -k DeviceName 2>/dev/null || echo "Unknown")
 echo "[OK] Device: $NAME ($DEVICE_UDID)"
 
+# Get WiFi IP
+WIFI_IP=""
+if command -v ifconfig &>/dev/null; then
+    WIFI_IP=$(ifconfig en0 2>/dev/null | grep "inet " | awk '{print $2}')
+fi
+if [ -z "$WIFI_IP" ]; then
+    WIFI_IP=$(ipconfig getifaddr en0 2>/dev/null || echo "")
+fi
+
+echo ""
+echo "========================================="
+echo "  Mode: USB (default)"
+echo "  WiFi IP: ${WIFI_IP:-not connected}"
+echo "  WDA will be accessible at localhost:$PORT"
+echo "========================================="
+echo ""
+
 # 1. iproxy
 echo "[1/3] Starting iproxy..."
 iproxy -u "$DEVICE_UDID" $PORT $PORT 2>/dev/null &
@@ -43,6 +60,7 @@ kill -0 $IPROXY_PID 2>/dev/null && echo "  OK" || { echo "  FAILED"; exit 1; }
 
 # 2. WDA
 echo "[2/3] Starting WebDriverAgent..."
+FORWARD_PID=""
 if [ -d "$WDA_DIR/WebDriverAgent.xcodeproj" ]; then
     nohup xcodebuild test \
         -project "$WDA_DIR/WebDriverAgent.xcodeproj" \
@@ -65,6 +83,25 @@ if [ -d "$WDA_DIR/WebDriverAgent.xcodeproj" ]; then
             echo "  WDA failed to start!"
         fi
     done
+
+    # WiFi forward with pymobiledevice3 (if available)
+    if [ -n "$WIFI_IP" ] && command -v pymobiledevice3 &>/dev/null; then
+        echo ""
+        echo "  [WiFi] Forwarding WDA port via pymobiledevice3..."
+        pymobiledevice3 usbmux forward $PORT $PORT --udid "$DEVICE_UDID" &
+        FORWARD_PID=$!
+        sleep 2
+        if kill -0 $FORWARD_PID 2>/dev/null; then
+            echo "  [WiFi] Forward OK → iPhone accessible at $WIFI_IP:$PORT"
+        else
+            echo "  [WiFi] Forward failed"
+            FORWARD_PID=""
+        fi
+    elif [ -n "$WIFI_IP" ]; then
+        echo ""
+        echo "  [WiFi] Install pymobiledevice3 for WiFi touch support:"
+        echo "         brew install pymobiledevice3"
+    fi
 else
     echo "  WDA project not found at $WDA_DIR"
     echo "  Download: https://github.com/appium/WebDriverAgent"
@@ -88,6 +125,9 @@ fi
 
 echo ""
 echo "=== Running ==="
+echo "  USB:  localhost:$PORT"
+[ -n "$WIFI_IP" ] && echo "  WiFi: $WIFI_IP:$PORT"
+echo "  Logs: tail -f /tmp/wda.log"
 echo "  Press Ctrl+C to stop"
 echo ""
 
@@ -107,5 +147,11 @@ while true; do
         WDA_PID=$!
         sleep 15
         curl -s -m 2 "http://localhost:$PORT/status" 2>/dev/null | grep -q '"ready"' && echo "  WDA restarted OK" || echo "  WDA restart failed"
+
+        # Restart WiFi forward
+        if [ -n "$FORWARD_PID" ] && ! kill -0 $FORWARD_PID 2>/dev/null; then
+            pymobiledevice3 usbmux forward $PORT $PORT --udid "$DEVICE_UDID" &
+            FORWARD_PID=$!
+        fi
     fi
 done
