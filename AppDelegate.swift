@@ -5,7 +5,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     var previewView: PreviewView!
     private var keyBindingsWindowController: KeyBindingsWindowController?
-    private var wifiSettingsController: WiFiSettingsController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupMainMenu()
@@ -74,9 +73,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // File menu
         let fileMenu = NSMenu(title: "File")
         fileMenu.addItem(withTitle: "Key Bindings...", action: #selector(showKeyBindings), keyEquivalent: "k")
-        fileMenu.addItem(withTitle: "WiFi Settings...", action: #selector(showWiFiSettings), keyEquivalent: "")
-        fileMenu.addItem(NSMenuItem.separator())
-        fileMenu.addItem(withTitle: "Toggle WiFi Mode", action: #selector(toggleWiFiMode), keyEquivalent: "w")
         let fileMenuItem = NSMenuItem()
         fileMenuItem.submenu = fileMenu
         mainMenu.addItem(fileMenuItem)
@@ -102,18 +98,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showPreferences() {
         showKeyBindings()
-    }
-
-    @objc private func toggleWiFiMode() {
-        previewView.toggleWiFiMode()
-    }
-
-    @objc private func showWiFiSettings() {
-        let currentURL = previewView.wiFiWDAURL
-        wifiSettingsController = WiFiSettingsController(currentURL: currentURL) { [weak self] url in
-            self?.previewView.setWiFiWDAURL(url)
-        }
-        wifiSettingsController?.showWindow(nil)
     }
 
     private func handleRotation(_ notification: Notification) {

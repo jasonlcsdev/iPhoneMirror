@@ -25,10 +25,6 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
     private var isPickingCoords = false
     private var crosshairView: NSView?
 
-    // WiFi mode
-    private var wifiCaptureManager: WiFiCaptureManager?
-    private var isWiFiMode = false
-
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupView()
@@ -75,77 +71,6 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
     func reloadKeyBindings() {
         keyBindingManager.loadBindings()
         print("[iPhoneMirror] Key bindings reloaded")
-    }
-
-    // MARK: - WiFi WDA URL
-
-    var wiFiWDAURL: String {
-        return wdaClient.baseURL
-    }
-
-    func setWiFiWDAURL(_ url: String) {
-        wdaClient.setBaseURL(url)
-    }
-
-    // MARK: - WiFi Mode
-
-    func startWiFiMode() {
-        guard !isWiFiMode else { return }
-        isWiFiMode = true
-
-        captureSession?.stopRunning()
-        captureSession = nil
-
-        showStatusMessage("WiFi Mode Active\n\n1. Enable AirPlay Receiver: System Settings > General > AirDrop & Handoff\n2. On iPhone: Control Center > Mirroring > Select this Mac\n\nWaiting for AirPlay window...")
-
-        wifiCaptureManager = WiFiCaptureManager()
-        wifiCaptureManager?.delegate = self
-        wifiCaptureManager?.onFrame = { [weak self] image in
-            self?.updateWiFiFrame(image)
-        }
-        wifiCaptureManager?.startCapture()
-        print("[iPhoneMirror] WiFi mode started")
-    }
-
-    func stopWiFiMode() {
-        guard isWiFiMode else { return }
-        isWiFiMode = false
-
-        wifiCaptureManager?.stopCapture()
-        wifiCaptureManager = nil
-
-        startCapture()
-        print("[iPhoneMirror] WiFi mode stopped, USB mode")
-    }
-
-    func toggleWiFiMode() {
-        if isWiFiMode {
-            stopWiFiMode()
-        } else {
-            startWiFiMode()
-        }
-    }
-
-    private func updateWiFiFrame(_ image: CGImage) {
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-
-        let parentLayer = layer!
-        let sublayer = parentLayer.sublayers?.first ?? {
-            let l = CALayer()
-            parentLayer.addSublayer(l)
-            return l
-        }()
-
-        sublayer.contents = image
-        sublayer.frame = bounds
-        sublayer.contentsGravity = .resizeAspect
-
-        CATransaction.commit()
-
-        if statusLabel != nil {
-            removeStatusMessage()
-        }
     }
 
     func startCapture() {
@@ -538,26 +463,5 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
     private func removeStatusMessage() {
         statusLabel?.removeFromSuperview()
         statusLabel = nil
-    }
-}
-
-extension PreviewView: WiFiCaptureDelegate {
-    func wifiCaptureDidStart() {
-        print("[iPhoneMirror] WiFi capture started")
-    }
-
-    func wifiCaptureDidStop() {
-        print("[iPhoneMirror] WiFi capture stopped")
-    }
-
-    func wifiCaptureDidError(_ error: String) {
-        print("[iPhoneMirror] WiFi error: \(error)")
-        isWiFiMode = false
-        DispatchQueue.main.async {
-            self.showStatusMessage("WiFi capture failed:\n\(error)\n\nFalling back to USB mode...")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                self.startCapture()
-            }
-        }
     }
 }
