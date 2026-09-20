@@ -96,6 +96,8 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
         captureSession?.stopRunning()
         captureSession = nil
 
+        showStatusMessage("WiFi Mode Active\n\nTo mirror iPhone:\n1. Enable AirPlay Receiver on Mac\n2. Start AirPlay from iPhone\n\nWaiting for AirPlay window...")
+
         wifiCaptureManager = WiFiCaptureManager()
         wifiCaptureManager?.delegate = self
         wifiCaptureManager?.onFrame = { [weak self] image in
@@ -140,6 +142,10 @@ class PreviewView: NSView, AVCaptureVideoDataOutputSampleBufferDelegate {
         sublayer.contentsGravity = .resizeAspect
 
         CATransaction.commit()
+
+        if statusLabel != nil {
+            removeStatusMessage()
+        }
     }
 
     func startCapture() {

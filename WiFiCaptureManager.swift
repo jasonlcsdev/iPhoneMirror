@@ -12,6 +12,7 @@ class WiFiCaptureManager: NSObject, SCStreamDelegate {
     weak var delegate: WiFiCaptureDelegate?
     private var stream: SCStream?
     private var isCapturing = false
+    private let ciContext = CIContext()
 
     var onFrame: ((CGImage) -> Void)?
 
@@ -33,8 +34,7 @@ class WiFiCaptureManager: NSObject, SCStreamDelegate {
                 return
             }
 
-            let displays = content.displays
-            guard let display = displays.first else {
+            guard let display = content.displays.first else {
                 print("[WiFi] No display found")
                 self.delegate?.wifiCaptureDidError("No display found")
                 return
@@ -97,6 +97,38 @@ class WiFiCaptureManager: NSObject, SCStreamDelegate {
         }
         return nil
     }
+
+    private func cropToAirPlayWindow(_ image: CGImage) -> CGImage? {
+        guard let window = findAirPlayWindow() else {
+            return nil
+        }
+
+        let wf = window.frame
+        let imgW = CGFloat(image.width)
+        let imgH = CGFloat(image.height)
+
+        guard wf.width > 0, wf.height > 0, imgW > 0, imgH > 0 else {
+            return nil
+        }
+
+        let scaleX = imgW / wf.width
+        let scaleY = imgH / wf.height
+
+        let cropX = wf.origin.x * scaleX
+        let cropH = wf.height * scaleY
+        let cropY = (wf.height - wf.origin.y - wf.height) * scaleY
+        let cropW = wf.width * scaleX
+
+        let cropRect = CGRect(x: cropX, y: cropY, width: cropW, height: cropH)
+
+        guard cropRect.width > 0, cropRect.height > 0,
+              cropRect.minX >= 0, cropRect.minY >= 0,
+              cropRect.maxX <= imgW, cropRect.maxY <= imgH,
+              let cropped = image.cropping(to: cropRect) else {
+            return nil
+        }
+        return cropped
+    }
 }
 
 extension WiFiCaptureManager: SCStreamOutput {
@@ -105,11 +137,16 @@ extension WiFiCaptureManager: SCStreamOutput {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
         let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let context = CIContext()
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return }
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return }
 
-        DispatchQueue.main.async {
-            self.onFrame?(cgImage)
+        if let cropped = cropToAirPlayWindow(cgImage) {
+            DispatchQueue.main.async {
+                self.onFrame?(cropped)
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.onFrame?(cgImage)
+            }
         }
     }
 }
